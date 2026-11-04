@@ -12,6 +12,11 @@ from pathlib import Path
 from poc.dt_download import DtChannel, discovery_versions, download_entry, download_metadata, launch_console
 from poc.dt_ppr_power import CAPTURED_BODY
 
+# The legacy captured identity carries its own console's account hash and host ID,
+# so only that console can ever accept it.  Derived from the template rather than
+# hardcoded so the two cannot drift apart.
+LEGACY_BODY_HOST_ID = CAPTURED_BODY[32:38].hex().upper()
+
 
 def emit(kind, **values):
     print(json.dumps({"type": kind, **values}), flush=True)
@@ -41,7 +46,10 @@ def hardware_id(options, response):
         return requested
     host_id = discovery_host_id(response)
     if host_id:
-        return {"5C843CC6D727": 2, "5C96661F7C1A": 3}.get(host_id, 3)
+        # Per-console hardware IDs observed so far.  The captured template's own
+        # console needs 2; note that a 14.22 shellcore only accepts 1 or 3, so 2
+        # implies the 13.60 check is looser than the 14.x one.
+        return {LEGACY_BODY_HOST_ID: 2, "5C96661F7C1A": 3}.get(host_id, 3)
     return 3
 
 
@@ -162,22 +170,29 @@ def download(options):
             emit("log", message="Reusing Data Transfer approval; no power request needed")
         else:
             emit("status", step=2, message="Approving Data Transfer. Press the CLIENT power button if asked.")
-            prefix = (power_request_prefix(options.get("accountId"), output / "metadata.db",
-                                           options.get("approvalPrefixPath"))
-                      if firmware_version == 0x14220000 else None)
-            if firmware_version == 0x14220000 and prefix is None:
+            # The account hash is SHA-256 of the owner's 8-byte PSN account ID and is
+            # firmware-independent: shellcore's GetExistedAuthAccount compares it the
+            # same way on 13.60 and 14.22, and answers 0x11 "Request User is not
+            # exist." when it matches nobody.  So compute it for every firmware, not
+            # only 14.22 - otherwise every other console silently falls back to the
+            # captured template's account and is rejected with 0x11.
+            prefix = power_request_prefix(options.get("accountId"), output / "metadata.db",
+                                          options.get("approvalPrefixPath"))
+            host_id_hex = discovery_host_id(response)
+            if prefix is None and (host_id_hex or "").upper() != LEGACY_BODY_HOST_ID:
                 raise RuntimeError(
-                    "14.22 needs a paired console or the PSN account ID for the first browse. "
-                    "Pair through the PS5 Data Transfer menu, select a PS4 USB backup, "
-                    "or enter the decimal account ID."
+                    "this console needs its owner's PSN account ID for the first browse: the "
+                    f"legacy captured identity belongs to {LEGACY_BODY_HOST_ID}, not to "
+                    f"{host_id_hex}. Enter the decimal account ID, select a PS4 USB backup, "
+                    "or pair through the PS5 Data Transfer menu."
                 )
             if prefix is not None:
                 source = ("PSN account ID" if str(options.get("accountId", "")).strip() else
                           "paired console" if options.get("approvalPrefixPath") else "prior metadata")
                 emit("log", message=f"Power request identity: {source}")
             else:
-                emit("log", message="Power request identity: legacy captured template")
-            host_id_hex = discovery_host_id(response)
+                emit("log", message="Power request identity: legacy captured template "
+                                    f"(only accepted by {LEGACY_BODY_HOST_ID})")
             hardware = hardware_id(options, response)
             emit("log", message=f"Power request hardware ID: {hardware}")
             body = build_power_request_body(
@@ -197,10 +212,20 @@ def download(options):
                 )
             if result != 0:
                 hint = ""
-                if result == 0x11 and firmware_version == 0x14220000:
-                    hint = (" Stored pairing may be for a different PSN user; pair this PS5 again."
-                            if options.get("approvalPrefixPath") and not str(options.get("accountId", "")).strip()
-                            else " Check that the decimal PSN account ID belongs to this console user.")
+                if result == 0x11:
+                    # shellcore ProcessPwrReqPS5: GetExistedAuthAccount hashed every
+                    # user registered on the console and none matched the 32 bytes we
+                    # sent, so it reports 17 = "Request User is not exist."
+                    if prefix is None:
+                        hint = (" The captured template's account is not a user on this"
+                                " console; enter its owner's decimal PSN account ID.")
+                    elif (options.get("approvalPrefixPath")
+                          and not str(options.get("accountId", "")).strip()):
+                        hint = (" Stored pairing may be for a different PSN user;"
+                                " pair this PS5 again.")
+                    else:
+                        hint = (" Check that the decimal PSN account ID belongs to a user"
+                                " logged in on this console.")
                 raise RuntimeError(f"client rejected Data Transfer with result {result:#x}.{hint}")
 
         emit("status", step=3, message="Downloading save metadata.")

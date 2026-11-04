@@ -84,5 +84,49 @@ class PowerIdentityTests(unittest.TestCase):
         self.assertEqual(body[:32], CAPTURED_BODY[:32])
 
 
+class FirmwareIndependenceTests(unittest.TestCase):
+    """The account hash must be used on every firmware, not just 14.22.
+
+    Regression: the prefix used to be computed as
+    ``power_request_prefix(...) if firmware_version == 0x14220000 else None``, so a
+    13.60 console was always offered the captured template's account and answered
+    0x11 "Request User is not exist." even when the operator had typed the correct
+    decimal account ID.
+    """
+
+    def test_prefix_has_no_firmware_input(self):
+        # SHA-256(be64(account_id)) - shellcore compares it the same way on every
+        # firmware, so the helper must not depend on one.
+        import inspect
+        self.assertNotIn("firmware", inspect.signature(power_request_prefix).parameters)
+        self.assertEqual(power_request_prefix(ACCOUNT_ID), EXPECTED)
+        self.assertEqual(power_request_prefix(ACCOUNT_ID),
+                         power_request_prefix(str(int(ACCOUNT_ID))))
+
+    def test_1360_body_accepts_a_real_prefix(self):
+        body = build_power_request_body(0x13600007, 2, "78C88169B130",
+                                        power_request_prefix(ACCOUNT_ID))
+        self.assertEqual(len(body), 88)
+        self.assertEqual(body[:32], EXPECTED)
+        self.assertNotEqual(body[:32], CAPTURED_BODY[:32])
+        self.assertEqual(body[32:38], bytes.fromhex("78C88169B130"))
+        self.assertEqual(struct.unpack_from("<I", body, 44)[0], 2)
+        self.assertEqual(struct.unpack_from("<I", body, 76)[0], 0x13600007)
+        self.assertEqual(struct.unpack_from("<I", body, 84)[0], 0x13600007)
+        # the captured 13.60 body stores its firmware the same way
+        self.assertEqual(CAPTURED_BODY[76:80], bytes.fromhex("07006013"))
+
+    def test_legacy_template_host_id_is_derived_from_the_body(self):
+        from poc.dt_backend import LEGACY_BODY_HOST_ID
+        self.assertEqual(LEGACY_BODY_HOST_ID, CAPTURED_BODY[32:38].hex().upper())
+        self.assertEqual(LEGACY_BODY_HOST_ID, "5C843CC6D727")
+
+    def test_backend_does_not_gate_the_prefix_on_firmware(self):
+        source = Path(__file__).resolve().parent.parent.joinpath("poc", "dt_backend.py").read_text()
+        self.assertNotIn("if firmware_version == 0x14220000 else None", source,
+                         "the account prefix must be computed for every firmware")
+        self.assertIn("prefix = power_request_prefix(", source)
+
+
 if __name__ == "__main__":
     unittest.main()
