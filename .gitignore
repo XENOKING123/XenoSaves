@@ -13,3 +13,4 @@ dist/
 out/
 poc/bin/
 .DS_Store
+build/python/
