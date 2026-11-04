@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { app } = require('electron');
+const { defaultDownloads } = require('./paths.cjs');
 const configPath = app.isPackaged
   ? path.join(app.getPath('userData'), 'config.ini')
   : path.join(__dirname, '..', 'config.ini');
@@ -18,9 +19,9 @@ const defaults = {
   oraclePort: 9022,
   interface: 'wlp4s0',
   hardware: 0,
-  output: path.join(__dirname, '..', 'dt_downloads'),
+  output: defaultDownloads,
   metadata: '',
-  assets: path.join(__dirname, '..', 'dt_downloads'),
+  assets: defaultDownloads,
   userId: '',
   titleId: '',
   entryId: 137,

@@ -7,7 +7,7 @@ const path = require('node:path');
 const { startRemoteOracle, stopRemoteOracle } = require('./remote_oracle.cjs');
 const { loadSettings, saveSettings } = require('./config.cjs');
 const { titleName } = require('./titles.cjs');
-const { projectRoot, oracleElf, pythonBin } = require('./paths.cjs');
+const { resourceRoot, oracleElf, workDir, pythonBin } = require('./paths.cjs');
 let window;
 let active = null;
 let oracle = null;
@@ -101,8 +101,8 @@ function startDownload(options) {
   (async () => {
     await ensureOracle(options);
     const child = spawn(pythonBin(), ['-u', '-m', 'poc.dt_backend', 'download', JSON.stringify(options)], {
-      cwd: projectRoot,
-      env: process.env,
+      cwd: workDir,
+      env: { ...process.env, PYTHONPATH: resourceRoot },
     });
     active.process = child;
     let buffer = '';
@@ -147,7 +147,7 @@ function getConsoles(options) {
         broadcast = parts.join('.');
       }
     }
-    const child = spawn(pythonBin(), ['-m', 'poc.dt_discovery', '--broadcast', broadcast], { cwd: projectRoot });
+    const child = spawn(pythonBin(), ['-m', 'poc.dt_discovery', '--broadcast', broadcast], { cwd: workDir, env: { ...process.env, PYTHONPATH: resourceRoot } });
     let buffer = '';
     child.stdout.on('data', (data) => { buffer += data; });
     child.stderr.on('data', (data) => { buffer += data; });
@@ -165,7 +165,7 @@ function getConsoles(options) {
 
 function getUsers(metadataPath) {
   return new Promise((resolve, reject) => {
-    const child = spawn(pythonBin(), ['-m', 'poc.dt_backend', 'users', metadataPath], { cwd: projectRoot });
+    const child = spawn(pythonBin(), ['-m', 'poc.dt_backend', 'users', metadataPath], { cwd: workDir, env: { ...process.env, PYTHONPATH: resourceRoot } });
     let buffer = '';
     child.stdout.on('data', (data) => { buffer += data; });
     child.stderr.on('data', (data) => { buffer += data; });
@@ -184,7 +184,7 @@ function getUsers(metadataPath) {
 
 function getInventory(metadataPath) {
   return new Promise((resolve, reject) => {
-    const child = spawn(pythonBin(), ['-m', 'poc.dt_backend', 'inventory', metadataPath], { cwd: projectRoot });
+    const child = spawn(pythonBin(), ['-m', 'poc.dt_backend', 'inventory', metadataPath], { cwd: workDir, env: { ...process.env, PYTHONPATH: resourceRoot } });
     let buffer = '';
     child.stdout.on('data', (data) => { buffer += data; });
     child.stderr.on('data', (data) => { buffer += data; });
@@ -221,7 +221,7 @@ function createMetadata(options) {
     else args.push('--title-id', options.titleId || '');
     const entryIds = Array.isArray(options.entryIds) ? options.entryIds : [];
     for (const entryId of entryIds) args.push('--entry-id', String(entryId));
-    const child = spawn(pythonBin(), args, { cwd: projectRoot });
+    const child = spawn(pythonBin(), args, { cwd: workDir, env: { ...process.env, PYTHONPATH: resourceRoot } });
     let output = '';
     child.stdout.on('data', (data) => { output += data; });
     child.stderr.on('data', (data) => { output += data; });
@@ -243,10 +243,10 @@ function startUpload(options) {
     await createMetadata(options);
     await ensureOracle(options);
     const sourceEnvironment = {
-      DT_METADATA: path.resolve(projectRoot, options.metadata),
-      DT_ASSETS: path.resolve(projectRoot, options.assets),
-      DT_MANIFEST: path.resolve(projectRoot, options.uploadManifest),
-      DT_LOG: path.join(path.resolve(projectRoot, options.output), 'dt-source.log'),
+      DT_METADATA: path.resolve(options.metadata),
+      DT_ASSETS: path.resolve(options.assets),
+      DT_MANIFEST: path.resolve(options.uploadManifest),
+      DT_LOG: path.join(path.resolve(options.output), 'dt-source.log'),
       DT_EXIT_ON_EOF: '1',
       DT_PORT: String(options.sourcePort || 1004),
       DT_DATA_PORT: String(options.dataPort || 1005),
@@ -258,18 +258,18 @@ function startUpload(options) {
     const python = pythonBin();
     let command = python;
     let args = ['-u', '-m', 'poc.dt_source'];
-    let environment = { ...process.env, ...sourceEnvironment };
+    let environment = { ...process.env, PYTHONPATH: resourceRoot, ...sourceEnvironment };
     if (needsRoot) {
       command = 'pkexec';
       args = [
-        '/usr/bin/env', `PYTHONPATH=${projectRoot}`,
+        '/usr/bin/env', `PYTHONPATH=${resourceRoot}`,
         ...Object.entries(sourceEnvironment).map(([name, value]) => `${name}=${value}`),
         python, '-u', '-m', 'poc.dt_source',
       ];
       environment = process.env;
       send('log', { message: '[privilege] authenticate to bind Data Transfer ports 1004–1006' });
     }
-    const child = spawn(command, args, { cwd: projectRoot, env: environment });
+    const child = spawn(command, args, { cwd: workDir, env: environment });
     active.process = child;
     let buffer = '';
     child.stdout.on('data', (chunk) => {

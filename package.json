@@ -1,6 +1,6 @@
 {
   "name": "garlic-transfer",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Guided PS5 save download and upload using local or volunteer PPR oracles",
   "author": {
