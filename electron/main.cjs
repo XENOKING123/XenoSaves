@@ -333,7 +333,19 @@ function startUpload(options) {
       DT_PORT: String(options.sourcePort || 1004),
       DT_DATA_PORT: String(options.dataPort || 1005),
       DT_DISCOVERY_PORT: String(options.discoveryPort || 1006),
+      // ensureOracle() has already resolved these: for the volunteer oracle it
+      // points at the local relay it just started, otherwise at the configured
+      // console.  dt_source used to fall back to its own 192.168.0.125:9022
+      // default, so upload could never derive keys off the developer's LAN.
+      DT_ORACLE_HOST: String(options.oracleHost || '127.0.0.1'),
+      DT_ORACLE_PORT: String(options.oraclePort || 9022),
     };
+    if (options.advertiseAddress) {
+      sourceEnvironment.DT_ADVERTISE = String(options.advertiseAddress);
+    }
+    if (options.systemVersion) {
+      sourceEnvironment.DT_SYSTEM_VERSION = String(options.systemVersion);
+    }
     const needsRoot = process.platform === 'linux' && process.getuid() !== 0 &&
       [sourceEnvironment.DT_PORT, sourceEnvironment.DT_DATA_PORT, sourceEnvironment.DT_DISCOVERY_PORT]
         .some((port) => Number(port) < 1024);

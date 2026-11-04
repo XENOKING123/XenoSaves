@@ -100,11 +100,46 @@ def interactive_console():
 
 HOST_ID = b"020000000001"
 HOST_NAME = b"GarlicTransfer"
-SYSTEM_VERSION = b"14200007"
+SYSTEM_VERSION = os.environ.get("DT_SYSTEM_VERSION", "14200007").encode()
 METADATA_PATH = os.environ.get("DT_METADATA", "poc/dt-crypto/metadata-125-only137.db")
+# The address we tell the console to fetch save data from.  This must be THIS
+# PC's address on the console's network, so it is detected from the discovery
+# packet that arrives (see discovery_server) unless it is pinned with
+# --advertise-address / DT_ADVERTISE.  The literal below is only a last-resort
+# fallback for a machine with no usable route.
 DATA_ADDRESS = bytes.fromhex("00000000000000000000ffffc0a8006f")
+ADDRESS_PINNED = False
 COMMAND_PORT = int(os.environ.get("DT_PORT", "1004"))
 DATA_PORT = int(os.environ.get("DT_DATA_PORT", str(COMMAND_PORT + 1)))
+
+
+def local_ipv4_toward(peer):
+    """The local IPv4 the OS would use to reach `peer` ('' if it cannot tell)."""
+    try:
+        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            probe.connect((peer, 9))
+            return probe.getsockname()[0]
+        finally:
+            probe.close()
+    except OSError:
+        return ""
+
+
+def ipv4_mapped(ip):
+    """An IPv4 string -> the 16-byte IPv4-mapped form the DDP host-address uses."""
+    try:
+        return ipaddress.IPv6Address(f"::ffff:{ip}").packed
+    except (ValueError, ipaddress.AddressValueError):
+        return None
+
+
+def packed_address(text):
+    """Accept an IPv4 or IPv6 literal and return the 16 bytes DDP expects."""
+    addr = ipaddress.ip_address(text)
+    if addr.version == 4:
+        return ipaddress.IPv6Address(f"::ffff:{addr}").packed
+    return addr.packed
 
 
 def derive_session(sock, oracle_host, oracle_port, client_value, server_value):
@@ -114,6 +149,7 @@ def derive_session(sock, oracle_host, oracle_port, client_value, server_value):
 
 
 def discovery_server(port, ipv6=False):
+    global DATA_ADDRESS
     family = socket.AF_INET6 if ipv6 else socket.AF_INET
     sock = socket.socket(family, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -123,6 +159,19 @@ def discovery_server(port, ipv6=False):
         data, address = sock.recvfrom(4096)
         command = data.split(b" ", 1)[0]
         print(f"[ddp] {address[0]}: {command.decode(errors='replace')}", flush=True)
+        if command not in (b"SRCH", b"LAUNCH4"):
+            continue
+        # Advertise the interface this console actually reaches us on.  The
+        # LAUNCH4 host-address (and the device-info body) is where the console
+        # will open its data connection, so a stale or foreign address makes
+        # discovery look fine and the transfer die immediately afterwards.
+        if not ADDRESS_PINNED and not ipv6:
+            detected = local_ipv4_toward(address[0])
+            mapped = ipv4_mapped(detected) if detected else None
+            if mapped and mapped != DATA_ADDRESS:
+                DATA_ADDRESS = mapped
+                print(f"[ddp] advertising data address {detected} (route toward "
+                      f"{address[0]}), data port {DATA_PORT}", flush=True)
         if command == b"SRCH":
             response = (
                 b"HTTP/1.1 200 Ok\n"
@@ -133,7 +182,7 @@ def discovery_server(port, ipv6=False):
                 b"host-name:" + HOST_NAME + b"\n"
                 b"system-version:" + SYSTEM_VERSION + b"\n"
             )
-        elif command == b"LAUNCH4":
+        else:
             response = (
                 b"HTTP/1.1 200 Ok\n"
                 b"host-id:" + HOST_ID + b"\n"
@@ -142,8 +191,6 @@ def discovery_server(port, ipv6=False):
                 b"host-network:0\n"
                 b"host-address:" + DATA_ADDRESS.hex().encode() + b"\n"
             )
-        else:
-            continue
         sock.sendto(response, address)
 
 
@@ -395,22 +442,39 @@ def data_server(listener, oracle_host, oracle_port):
 
 
 def main():
-    global DATA_ADDRESS, COMMAND_PORT, DATA_PORT
+    global DATA_ADDRESS, ADDRESS_PINNED, COMMAND_PORT, DATA_PORT, SYSTEM_VERSION
     parser = argparse.ArgumentParser(description="Local PS5 Data Transfer source emulator")
-    parser.add_argument("--oracle-host", default="192.168.0.125")
-    parser.add_argument("--oracle-port", type=int, default=9022)
+    # The UI spawns this module with no argv, so every setting also has an
+    # environment form; without that the oracle below defaults to the developer's
+    # own LAN and upload fails as soon as the console connects.
+    parser.add_argument("--oracle-host", default=os.environ.get("DT_ORACLE_HOST", "192.168.0.125"))
+    parser.add_argument("--oracle-port", type=int,
+                        default=int(os.environ.get("DT_ORACLE_PORT", "9022")))
     parser.add_argument("--discovery-port", type=int, default=int(os.environ.get("DT_DISCOVERY_PORT", "1006")))
     parser.add_argument("--port", type=int, default=COMMAND_PORT)
     parser.add_argument("--data-port", type=int, default=DATA_PORT)
     parser.add_argument("--ipv6", action="store_true", help="use local PSK derivation instead of the oracle")
-    parser.add_argument("--advertise-address", help="PC IPv6 address to advertise for data connections")
+    parser.add_argument("--advertise-address", default=os.environ.get("DT_ADVERTISE"),
+                        help="PC address to advertise for data connections (IPv4 or IPv6). "
+                             "Default: detect the interface the console reaches us on")
+    parser.add_argument("--system-version", default=os.environ.get("DT_SYSTEM_VERSION"),
+                        help="system-version to advertise over DDP (default 14200007)")
     args = parser.parse_args()
     COMMAND_PORT = args.port
     DATA_PORT = args.data_port
+    if args.system_version:
+        SYSTEM_VERSION = str(args.system_version).encode()
     if args.ipv6 and not args.advertise_address:
         parser.error("--ipv6 requires --advertise-address")
     if args.advertise_address:
-        DATA_ADDRESS = ipaddress.IPv6Address(args.advertise_address).packed
+        try:
+            DATA_ADDRESS = packed_address(args.advertise_address)
+        except ValueError as exc:
+            parser.error(f"--advertise-address is not a valid IP address: {exc}")
+        ADDRESS_PINNED = True
+        print(f"[ddp] advertising the pinned data address {args.advertise_address}", flush=True)
+    print(f"[oracle] deriving keys via {args.oracle_host}:{args.oracle_port}"
+          f"{' (not used for --ipv6)' if args.ipv6 else ''}", flush=True)
     family = socket.AF_INET6 if args.ipv6 else socket.AF_INET
     bind_address = "::" if args.ipv6 else "0.0.0.0"
     sys.stdout = Tee(os.environ.get("DT_LOG", "dt.txt"))
