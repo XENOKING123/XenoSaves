@@ -25,14 +25,20 @@ def channel_host(client, interface, response, prefer_ipv6=False):
     return client
 
 
+def discovery_host_id(response):
+    for line in response.splitlines():
+        if line.startswith(b"host-id:"):
+            return line.split(b":", 1)[1].decode().strip()
+    return None
+
+
 def hardware_id(options, response):
     requested = int(options.get("hardware", 0))
     if requested:
         return requested
-    for line in response.splitlines():
-        if line.startswith(b"host-id:"):
-            host_id = line.split(b":", 1)[1].decode()
-            return {"5C843CC6D727": 2, "5C96661F7C1A": 3}.get(host_id, 3)
+    host_id = discovery_host_id(response)
+    if host_id:
+        return {"5C843CC6D727": 2, "5C96661F7C1A": 3}.get(host_id, 3)
     return 3
 
 
@@ -83,13 +89,18 @@ def download(options):
             emit("log", message="Reusing Data Transfer approval; no power request needed")
         else:
             emit("status", step=2, message="Approving Data Transfer. Press the CLIENT power button if asked.")
+            command = DtChannel(host, 1004, oracle_host, oracle_port, version=protocol_version)
             body = bytearray(CAPTURED_BODY)
+            body[0:16] = command.client_value
+            body[16:32] = command.server_value
+            host_id_hex = discovery_host_id(response)
+            if host_id_hex and len(host_id_hex) == 12:
+                body[32:38] = bytes.fromhex(host_id_hex)
             hardware = hardware_id(options, response)
             emit("log", message=f"Power request hardware ID: {hardware}")
             struct.pack_into("<I", body, 44, hardware)
-            struct.pack_into("<I", body, 72, firmware_version)
-            struct.pack_into("<I", body, 80, firmware_version)
-            command = DtChannel(host, 1004, oracle_host, oracle_port, version=protocol_version)
+            struct.pack_into("<I", body, 76, firmware_version)
+            struct.pack_into("<I", body, 84, firmware_version)
             sub = command.request(0x91, bytes(body))
             result, _ = command.response(0x91, sub)
             if result == 33:

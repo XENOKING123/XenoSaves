@@ -55,9 +55,11 @@ class DtChannel:
     def __init__(self, host, port, oracle_host, oracle_port, local_psk=False, version=0x130):
         self.sock = socket.create_connection((host, port), timeout=10)
         self.sock.settimeout(310)
-        client_value = os.urandom(16)
-        self.sock.sendall(client_value + bytes(48))
-        server_value = recv_exact(self.sock, 64)[:16]
+        self.client_value = os.urandom(16)
+        self.sock.sendall(self.client_value + bytes(48))
+        self.server_value = recv_exact(self.sock, 64)[:16]
+        client_value = self.client_value
+        server_value = self.server_value
         if local_psk:
             if ":" not in host:
                 raise ValueError("local PSK requires an IPv6 channel")
@@ -234,9 +236,11 @@ def main():
     data = None
     try:
         if not args.no_power:
-            body = bytearray(CAPTURED_BODY)
-            struct.pack_into("<I", body, 44, args.hardware)
             command = DtChannel(channel_host, args.command_port, args.oracle_host, args.oracle_port, args.local_psk)
+            body = bytearray(CAPTURED_BODY)
+            body[0:16] = command.client_value
+            body[16:32] = command.server_value
+            struct.pack_into("<I", body, 44, args.hardware)
             sub = command.request(0x91, bytes(body))
             result, _ = command.response(0x91, sub)
             if result == 33:
