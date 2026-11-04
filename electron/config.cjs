@@ -1,7 +1,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const configPath = path.join(__dirname, '..', 'config.ini');
+const { app } = require('electron');
+const configPath = app.isPackaged
+  ? path.join(app.getPath('userData'), 'config.ini')
+  : path.join(__dirname, '..', 'config.ini');
 const fields = [
   'useRemoteOracle', 'serverUrl', 'workerKey', 'oracleHost', 'oraclePort',
   'interface', 'hardware', 'output', 'metadata', 'assets',

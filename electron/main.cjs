@@ -7,9 +7,7 @@ const path = require('node:path');
 const { startRemoteOracle, stopRemoteOracle } = require('./remote_oracle.cjs');
 const { loadSettings, saveSettings } = require('./config.cjs');
 const { titleName } = require('./titles.cjs');
-
-const projectRoot = path.resolve(__dirname, '..');
-const oracleElf = path.join(projectRoot, 'poc', 'ncdt_oracle', 'ncdt_oracle_server.elf');
+const { projectRoot, oracleElf, pythonBin } = require('./paths.cjs');
 let window;
 let active = null;
 let oracle = null;
@@ -102,7 +100,7 @@ function startDownload(options) {
   active = { kind: 'download', completed: false, awaitingSelection: false, process: null };
   (async () => {
     await ensureOracle(options);
-    const child = spawn('python3', ['-u', '-m', 'poc.dt_backend', 'download', JSON.stringify(options)], {
+    const child = spawn(pythonBin(), ['-u', '-m', 'poc.dt_backend', 'download', JSON.stringify(options)], {
       cwd: projectRoot,
       env: process.env,
     });
@@ -149,7 +147,7 @@ function getConsoles(options) {
         broadcast = parts.join('.');
       }
     }
-    const child = spawn('python3', ['-m', 'poc.dt_discovery', '--broadcast', broadcast], { cwd: projectRoot });
+    const child = spawn(pythonBin(), ['-m', 'poc.dt_discovery', '--broadcast', broadcast], { cwd: projectRoot });
     let buffer = '';
     child.stdout.on('data', (data) => { buffer += data; });
     child.stderr.on('data', (data) => { buffer += data; });
@@ -167,7 +165,7 @@ function getConsoles(options) {
 
 function getUsers(metadataPath) {
   return new Promise((resolve, reject) => {
-    const child = spawn('python3', ['-m', 'poc.dt_backend', 'users', metadataPath], { cwd: projectRoot });
+    const child = spawn(pythonBin(), ['-m', 'poc.dt_backend', 'users', metadataPath], { cwd: projectRoot });
     let buffer = '';
     child.stdout.on('data', (data) => { buffer += data; });
     child.stderr.on('data', (data) => { buffer += data; });
@@ -186,7 +184,7 @@ function getUsers(metadataPath) {
 
 function getInventory(metadataPath) {
   return new Promise((resolve, reject) => {
-    const child = spawn('python3', ['-m', 'poc.dt_backend', 'inventory', metadataPath], { cwd: projectRoot });
+    const child = spawn(pythonBin(), ['-m', 'poc.dt_backend', 'inventory', metadataPath], { cwd: projectRoot });
     let buffer = '';
     child.stdout.on('data', (data) => { buffer += data; });
     child.stderr.on('data', (data) => { buffer += data; });
@@ -223,7 +221,7 @@ function createMetadata(options) {
     else args.push('--title-id', options.titleId || '');
     const entryIds = Array.isArray(options.entryIds) ? options.entryIds : [];
     for (const entryId of entryIds) args.push('--entry-id', String(entryId));
-    const child = spawn('python3', args, { cwd: projectRoot });
+    const child = spawn(pythonBin(), args, { cwd: projectRoot });
     let output = '';
     child.stdout.on('data', (data) => { output += data; });
     child.stderr.on('data', (data) => { output += data; });
@@ -257,7 +255,8 @@ function startUpload(options) {
     const needsRoot = process.platform === 'linux' && process.getuid() !== 0 &&
       [sourceEnvironment.DT_PORT, sourceEnvironment.DT_DATA_PORT, sourceEnvironment.DT_DISCOVERY_PORT]
         .some((port) => Number(port) < 1024);
-    let command = 'python3';
+    const python = pythonBin();
+    let command = python;
     let args = ['-u', '-m', 'poc.dt_source'];
     let environment = { ...process.env, ...sourceEnvironment };
     if (needsRoot) {
@@ -265,7 +264,7 @@ function startUpload(options) {
       args = [
         '/usr/bin/env', `PYTHONPATH=${projectRoot}`,
         ...Object.entries(sourceEnvironment).map(([name, value]) => `${name}=${value}`),
-        '/usr/bin/python3', '-u', '-m', 'poc.dt_source',
+        python, '-u', '-m', 'poc.dt_source',
       ];
       environment = process.env;
       send('log', { message: '[privilege] authenticate to bind Data Transfer ports 1004–1006' });

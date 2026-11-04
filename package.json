@@ -3,12 +3,104 @@
   "version": "0.1.0",
   "private": true,
   "description": "Guided PS5 save download and upload using local or volunteer PPR oracles",
+  "author": {
+    "name": "earthonion",
+    "email": "earth@grr.llc"
+  },
+  "homepage": "https://git.etawen.dev/earthonion/GarlicTransfer",
   "main": "electron/main.cjs",
   "scripts": {
     "start": "electron .",
-    "check": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/renderer.js && node --check electron/remote_oracle.cjs && node --check electron/config.cjs && node --check electron/titles.cjs"
+    "check": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/renderer.js && node --check electron/remote_oracle.cjs && node --check electron/config.cjs && node --check electron/titles.cjs && node --check electron/paths.cjs",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
   },
   "devDependencies": {
-    "electron": "28.3.3"
+    "electron": "28.3.3",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "com.earthonion.garlictransfer",
+    "productName": "GarlicTransfer",
+    "files": [
+      "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "poc",
+        "to": "poc",
+        "filter": ["**/*", "!__pycache__/**", "!*.pyc"]
+      },
+      {
+        "from": "data",
+        "to": "data",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "requirements.txt",
+        "to": "requirements.txt"
+      },
+      {
+        "from": "build/linux",
+        "to": "build/linux",
+        "filter": ["*.policy"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerSidebar": null
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "public.app-category.utilities",
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Utility",
+      "icon": "build/icons",
+      "desktop": {
+        "Name": "GarlicTransfer",
+        "Comment": "PS5 save download and upload tool",
+        "Terminal": "false"
+      }
+    },
+    "deb": {
+      "depends": [
+        "python3 (>= 3.10)",
+        "python3-cryptography",
+        "polkitd | policykit-1"
+      ],
+      "afterInstall": "build/linux/postinst.sh"
+    }
   }
 }
