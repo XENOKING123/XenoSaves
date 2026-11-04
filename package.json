@@ -55,7 +55,7 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icons"
     },
     "nsis": {
       "oneClick": false,
@@ -70,7 +70,7 @@
         }
       ],
       "category": "public.app-category.utilities",
-      "icon": "build/icon.icns",
+      "icon": "build/icons",
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
