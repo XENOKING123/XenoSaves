@@ -1,9 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('saveTransfer', {
+  pairingAvailable: process.platform === 'win32',
   chooseOutput: () => ipcRenderer.invoke('dialog:output'),
   chooseMetadata: () => ipcRenderer.invoke('dialog:metadata'),
   chooseAssets: () => ipcRenderer.invoke('dialog:assets'),
+  chooseAccountId: () => ipcRenderer.invoke('dialog:account-id'),
+  pair: (options) => ipcRenderer.invoke('transfer:pair', options),
+  pairingStatus: (identity) => ipcRenderer.invoke('transfer:pair-status', identity),
   download: (options) => ipcRenderer.invoke('transfer:download', options),
   select: (entryIds) => ipcRenderer.invoke('transfer:select', entryIds),
   finish: () => ipcRenderer.invoke('transfer:finish'),
