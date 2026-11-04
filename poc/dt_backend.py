@@ -89,10 +89,7 @@ def download(options):
             emit("log", message="Reusing Data Transfer approval; no power request needed")
         else:
             emit("status", step=2, message="Approving Data Transfer. Press the CLIENT power button if asked.")
-            command = DtChannel(host, 1004, oracle_host, oracle_port, version=protocol_version)
             body = bytearray(CAPTURED_BODY)
-            body[0:16] = command.client_value
-            body[16:32] = command.server_value
             host_id_hex = discovery_host_id(response)
             if host_id_hex and len(host_id_hex) == 12:
                 body[32:38] = bytes.fromhex(host_id_hex)
@@ -101,6 +98,7 @@ def download(options):
             struct.pack_into("<I", body, 44, hardware)
             struct.pack_into("<I", body, 76, firmware_version)
             struct.pack_into("<I", body, 84, firmware_version)
+            command = DtChannel(host, 1004, oracle_host, oracle_port, version=protocol_version)
             sub = command.request(0x91, bytes(body))
             result, _ = command.response(0x91, sub)
             if result == 33:
