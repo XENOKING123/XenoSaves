@@ -1,18 +1,25 @@
 import socket
 import struct
 import threading
+import time
 import unittest
 
 from poc import dt_source
 
 
 def _udp_exchange(port, payload, timeout=5.0):
+    deadline = time.monotonic() + timeout
     client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    client.settimeout(timeout)
+    client.settimeout(0.2)
     try:
-        client.sendto(payload, ("127.0.0.1", port))
-        data, _ = client.recvfrom(4096)
-        return data
+        while time.monotonic() < deadline:
+            client.sendto(payload, ("127.0.0.1", port))
+            try:
+                data, _ = client.recvfrom(4096)
+                return data
+            except socket.timeout:
+                continue
+        raise TimeoutError(f"no UDP response within {timeout} seconds")
     finally:
         client.close()
 
@@ -167,6 +174,70 @@ class OracleConfigurationTests(unittest.TestCase):
         self.assertEqual(len(body), 72)
         self.assertEqual(body[48:64], bytes.fromhex("00000000000000000000ffffc0a8052c"))
         self.assertEqual(struct.unpack_from("<I", body, 32)[0], 0x13600007)
+
+
+class PowerExchangeTests(unittest.TestCase):
+    def test_power_response_matches_each_console(self):
+        from poc.dt_backend import build_power_request_body, power_request_prefix
+        from poc.dt_download import DtChannel
+        from poc.dt_psk_client import derive_keys
+
+        for firmware, hardware, host_id, protocol in (
+            (0x13600007, 2, "5C843CC6D727", 0x130),
+            (0x14220000, 3, "5C96661F7C1A", 0x140),
+        ):
+            with self.subTest(firmware=f"{firmware:08x}"):
+                listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                listener.bind(("127.0.0.1", 0))
+                listener.listen(1)
+                port = listener.getsockname()[1]
+                errors = []
+
+                def serve():
+                    try:
+                        client, _ = listener.accept()
+                        with client:
+                            dt_source.serve_command(client, "unused", 0)
+                    except EOFError:
+                        pass
+                    except Exception as exc:
+                        errors.append(exc)
+
+                thread = threading.Thread(target=serve, daemon=True)
+                thread.start()
+
+                def derive_source(sock, oracle_host, oracle_port, client_value, server_value):
+                    return derive_keys(client_value, server_value)
+
+                def derive_oracle(host, port, client_value, server_value):
+                    return derive_keys(client_value, server_value)
+
+                body = build_power_request_body(
+                    firmware, hardware, host_id, power_request_prefix("72623859790382856")
+                )
+                channel = None
+                timer = threading.Timer(0.5, dt_source.POWER_EVENT.set)
+                try:
+                    from unittest.mock import patch
+                    with patch.object(dt_source, "derive_session", side_effect=derive_source), \
+                         patch("poc.dt_download.derive_with_oracle", side_effect=derive_oracle):
+                        channel = DtChannel("127.0.0.1", port, "unused", 0, version=protocol)
+                        timer.start()
+                        sub = channel.request(0x91, body)
+                        result, _ = channel.response(0x91, sub)
+                        self.assertEqual(result, 33)
+                        result, response = channel.response(0x91, sub)
+                        self.assertEqual(result, 0)
+                        self.assertEqual(struct.unpack_from("<I", response, 32)[0], firmware)
+                        self.assertEqual(struct.unpack_from("<I", response, 44)[0], firmware)
+                finally:
+                    timer.cancel()
+                    if channel is not None:
+                        channel.close()
+                    listener.close()
+                    thread.join(timeout=2)
+                self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":

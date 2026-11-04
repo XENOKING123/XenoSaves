@@ -294,8 +294,8 @@ def serve_command(sock, oracle_host, oracle_port):
         if cmd in (0x91, 0x93):
             hardware = struct.unpack_from("<I", body, 44)[0]
             product_code = struct.unpack_from("<I", body, 48)[0]
-            version_a = struct.unpack_from("<I", body, 72)[0]
-            version_b = struct.unpack_from("<I", body, 80)[0]
+            version_a = struct.unpack_from("<I", body, 76)[0]
+            version_b = struct.unpack_from("<I", body, 84)[0]
             response_body = console_info(hardware, product_code, body[56:73], version_a, version_b)
             result = 0
             if cmd == 0x91:
