@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GarlicTransfer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>GarlicTransfer</h1>
+      <p>Guided console-to-PC and PC-to-console save transfers using local or volunteer PPR oracles.</p>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="Application sections">
+    <button class="tab active" data-tab="transfer" type="button">Transfer</button>
+    <button class="tab" data-tab="settings" type="button">Settings</button>
+  </nav>
+  <main>
+    <section id="transferTab" class="tab-content">
+      <section class="panel console-picker">
+        <h2>Client console</h2>
+        <label>Discovered consoles<select id="consoleSelect"><option value="">Discover and select a console</option></select></label>
+        <button id="discoverBtn" type="button">Discover consoles</button>
+      </section>
+
+      <section class="actions">
+        <button id="downloadBtn" class="primary">Browse console saves <small>console → PC</small></button>
+        <button id="uploadBtn" class="primary">Upload selected saves <small>PC → console</small></button>
+        <button id="finishBtn" class="secondary danger" hidden>Finish and reboot console</button>
+        <button id="cancelBtn" class="secondary" disabled>Cancel</button>
+      </section>
+
+      <section id="uploadDestination" class="panel upload-inputs" hidden>
+        <h2>Upload destination</h2>
+        <p class="upload-instructions">Select user/save(s), then on the console go to Settings → System → System Software → Data Transfer, press Continue, select “GarlicTransfer” from the found consoles, then select “Start transfer”. Delete ALL selected original saves before upload.</p>
+        <label id="userSelectLabel" hidden>Upload to user
+          <select id="userSelect"></select>
+        </label>
+        <label id="uploadSaveSelectLabel" hidden>Upload saves (Ctrl/Cmd-click to select multiple)
+          <select id="uploadSaveSelect" multiple size="6"></select>
+        </label>
+        <button id="confirmUploadBtn" class="primary" hidden>Delete selected original saves and start upload</button>
+      </section>
+
+      <section class="status-panel">
+        <p id="status">Ready. Browse the console, then choose which saves to download or upload.</p>
+        <button id="powerBtn" class="power" hidden>Simulate source power button</button>
+      </section>
+
+      <section id="saveBrowser" class="panel" hidden>
+        <h2>Console save browser</h2>
+        <div class="browser-actions">
+          <label class="checkbox"><input id="selectAllEntries" type="checkbox" disabled> Select all</label>
+          <span id="entryCount">No saves selected</span>
+          <button id="downloadSelectedBtn" type="button" disabled>Download selected</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Select</th><th>Title</th><th>User</th><th>Size (MiB)</th><th>Action</th></tr></thead>
+            <tbody id="entries"><tr><td colspan="5" class="empty">Browse a console to list its saves.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel log-panel">
+        <h2>Live log</h2>
+        <pre id="log" aria-live="polite"></pre>
+      </section>
+    </section>
+
+    <section id="settingsTab" class="tab-content" hidden>
+      <section class="panel upload-inputs">
+        <h2>Transfer paths</h2>
+        <label>Console profile root folder
+          <span class="file-row"><input id="output" value="dt_downloads" spellcheck="false"><button data-action="output">Browse</button></span>
+        </label>
+        <label>metadata.db (optional)<span class="file-row"><input id="metadata" spellcheck="false" placeholder="Leave blank to generate metadata"><button data-action="metadata">Browse</button></span></label>
+        <label>Upload save folder<span class="file-row"><input id="assets" value="dt_downloads" spellcheck="false" placeholder="Folder containing downloaded saves"><button data-action="assets">Browse</button></span></label>
+      </section>
+
+      <section class="panel remote-oracle">
+        <h2>Oracle</h2>
+        <label class="checkbox"><input id="useRemoteOracle" type="checkbox" checked> Use volunteer workers (no jailbroken console needed)</label>
+        <label>HTOS server<input id="serverUrl" value="https://garlicsaves.com" spellcheck="false"></label>
+        <label>Worker/API key<input id="workerKey" type="password" placeholder="Key from the Contribute page" spellcheck="false"></label>
+        <label>Local jailbroken oracle IP<input id="oracleHost" value="192.168.0.125" spellcheck="false"></label>
+      </section>
+
+      <section class="panel connections">
+        <h2>Connection settings</h2>
+        <label>PC IPv6 interface<input id="interface" value="wlp4s0" spellcheck="false"></label>
+        <label>Client hardware ID (0 = automatic)<input id="hardware" value="0" inputmode="numeric"></label>
+        <label>Source command port<input id="sourcePort" value="1004" inputmode="numeric"></label>
+        <label>Source data port<input id="dataPort" value="1005" inputmode="numeric"></label>
+        <label>Discovery UDP port<input id="discoveryPort" value="1006" inputmode="numeric"></label>
+        <label class="checkbox"><input id="preferIpv6" type="checkbox"> Use IPv6 channel (advanced; IPv4 is the proven default)</label>
+      </section>
+
+      <section class="panel settings-actions">
+        <button id="settingsSave" class="primary">Save settings</button>
+        <p id="settingsStatus">Settings are stored in config.ini.</p>
+      </section>
+    </section>
+  </main>
+  <dialog id="powerModal" class="power-modal">
+    <h2>Console action required</h2>
+    <p>Press power button until it beeps and release</p>
+    <span>Waiting for metadata download…</span>
+  </dialog>
+  <script src="renderer.js"></script>
+</body>
+</html>

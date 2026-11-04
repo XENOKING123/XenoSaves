@@ -1,0 +1,15 @@
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+config.ini
+.forgejo-askpass.sh
+dt_downloads/
+dt-downloads/
+integrations/
+dt.txt
+*.log
+dist/
+out/
+poc/bin/
+.DS_Store

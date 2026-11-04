@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import re
+import shutil
+import sqlite3
+import time
+import uuid
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+TEMPLATE = PROJECT_ROOT / "poc" / "templates" / "single-save.db"
+
+
+def validate_user(user_id, user_name):
+    if not re.fullmatch(r"[0-9a-fA-F]{8}", user_id):
+        raise ValueError("user ID must be exactly 8 hexadecimal digits")
+    if not user_name or "\0" in user_name:
+        raise ValueError("user name is required")
+    return user_id.lower()
+
+
+def load_manifest(assets, entry_id=None):
+    assets = Path(assets).expanduser()
+    manifest_path = assets / "manifest.json"
+    if not manifest_path.is_file() and entry_id is not None:
+        manifest_path = assets / str(entry_id) / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError(f"save manifest not found under {assets}")
+    manifest = json.loads(manifest_path.read_text())
+    if not manifest:
+        raise ValueError("no downloaded saves were found; download save data before uploading")
+    if entry_id is None:
+        entry_id = manifest.get("entry_id")
+        if entry_id is None:
+            numeric_keys = [key for key in manifest if key.isdigit()]
+            if len(numeric_keys) != 1:
+                raise ValueError("select the save entries to upload; the manifest contains multiple saves")
+            entry_id = int(numeric_keys[0])
+    entry_id = int(entry_id)
+    entry = manifest.get(str(entry_id), {})
+    files = entry.get("files", manifest.get("files", []))
+    final_header = entry.get("final_header")
+    if not files:
+        raise ValueError(f"save manifest for entry {entry_id} contains no files")
+    if not final_header:
+        raise ValueError(f"entry {entry_id} lacks a GFP5 final header; redownload it with this version")
+    for item in files:
+        name = Path(item.get("file", "")).name
+        if not name or name != item.get("file"):
+            raise ValueError(f"entry {entry_id} has an invalid save filename")
+        candidates = (assets / str(entry_id) / name, assets / name)
+        if not any(path.is_file() for path in candidates):
+            raise ValueError(f"save file for entry {entry_id} is missing: {name}")
+        if not item.get("header"):
+            raise ValueError(f"save file {name} lacks its GFP5 header; redownload the save")
+        bytes.fromhex(item["header"])
+    bytes.fromhex(final_header)
+    return entry_id, {"files": files, "final_header": final_header}
+
+
+def write_upload_manifest(output, entries):
+    output = Path(output).expanduser()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps({str(entry_id): entry for entry_id, entry in entries.items()}, indent=2) + "\n")
+
+
+def infer_title_id(title_id, files):
+    if title_id:
+        return title_id.upper()
+    for item in files:
+        parts = item.get("path", "").strip("/").split("/")
+        for marker in ("savedata_prospero", "savedata"):
+            if marker in parts:
+                index = parts.index(marker)
+                if index + 1 < len(parts) and re.fullmatch(r"[A-Za-z0-9]{9}", parts[index + 1]):
+                    return parts[index + 1].upper()
+    raise ValueError("title ID must be exactly 9 letters or digits")
+
+
+def create_metadata(output, user_id, title_id, entry_id, assets, user_name="user", manifest_output=None):
+    user_id = validate_user(user_id, user_name)
+    entry_id, upload_entry = load_manifest(assets, entry_id)
+    files = upload_entry["files"]
+    title_id = infer_title_id(title_id, files)
+    if not re.fullmatch(r"[A-Z0-9]{9}", title_id):
+        raise ValueError("title ID must be exactly 9 letters or digits")
+    total_size = sum(int(item["size"]) for item in files)
+    bu_size = max(int(item["size"]) for item in files)
+    if total_size <= 0 or bu_size <= 0:
+        raise ValueError("save files must not be empty")
+
+    output = Path(output).expanduser()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(TEMPLATE, output)
+    db = sqlite3.connect(output)
+    try:
+        db.execute("DELETE FROM user_info_tbl")
+        db.execute("DELETE FROM users_savedata_tbl")
+        db.execute("DELETE FROM dir_entry_info_tbl")
+        db.execute(
+            "INSERT INTO user_info_tbl VALUES (?, ?, 0, 0, ?, ?, '', 'np', 1, 1, 0, ?, 1, 1)",
+            (int(user_id, 16), user_name, user_name, user_name, uuid.uuid4().hex[:16]),
+        )
+        db.execute(
+            "INSERT INTO users_savedata_tbl VALUES (?, ?, ?, ?, ?, 1, 1, 0, ?)",
+            (int(user_id, 16), title_id, title_id, total_size, bu_size, int(time.time())),
+        )
+        save_path = f"/user/home/{user_id}/savedata_prospero/{title_id}/"
+        db.execute(
+            "INSERT INTO dir_entry_info_tbl VALUES (?, ?, 1, 3, 0, '', '', ?, ?, ?, 0)",
+            (entry_id, save_path, total_size, total_size, total_size),
+        )
+        db.commit()
+    finally:
+        db.close()
+    if manifest_output:
+        write_upload_manifest(manifest_output, {entry_id: upload_entry})
+    return output
+
+
+def target_path(source_path, user_id):
+    parts = source_path.strip("/").split("/")
+    if len(parts) < 4 or parts[:2] != ["user", "home"]:
+        raise ValueError(f"unsupported save path in metadata: {source_path}")
+    parts[2] = user_id
+    result = "/" + "/".join(parts)
+    return result + "/" if source_path.endswith("/") else result
+
+
+def create_filtered_metadata(
+    output, source_metadata, user_id, user_name, entry_ids, assets, manifest_output=None
+):
+    user_id = validate_user(user_id, user_name)
+    if not entry_ids:
+        entry_ids = [None]
+    upload_entries = {}
+    for entry_id in entry_ids:
+        actual_id, entry = load_manifest(assets, entry_id)
+        upload_entries[actual_id] = entry
+    entry_ids = sorted(upload_entries)
+
+    output = Path(output).expanduser()
+    source_metadata = Path(source_metadata).expanduser()
+    if output.resolve() == source_metadata.resolve():
+        raise ValueError("filtered metadata output must differ from the source database")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source_metadata, output)
+    placeholders = ",".join("?" for _ in entry_ids)
+    db = sqlite3.connect(output)
+    try:
+        rows = db.execute(
+            f"SELECT * FROM dir_entry_info_tbl WHERE target_type = 3 AND id IN ({placeholders}) ORDER BY id",
+            entry_ids,
+        ).fetchall()
+        if {row[0] for row in rows} != set(entry_ids):
+            raise ValueError("one or more selected save entries are absent from the source metadata")
+        target_user = db.execute(
+            "SELECT * FROM user_info_tbl WHERE user_id = ?", (int(user_id, 16),)
+        ).fetchone()
+        savedata_rows = db.execute("SELECT * FROM users_savedata_tbl").fetchall()
+
+        db.execute("DELETE FROM dir_entry_info_tbl")
+        db.execute("DELETE FROM app_info_tbl")
+        db.execute("DELETE FROM app_service_ac_tbl")
+        db.execute("DELETE FROM app_service_fgc_tbl")
+        db.execute("DELETE FROM capture_info_tbl")
+        db.execute("DELETE FROM users_savedata_tbl")
+        db.execute("DELETE FROM user_info_tbl")
+        if target_user:
+            transfer_user = list(target_user)
+            transfer_user[7] = "np"
+            transfer_user[8] = 1
+            transfer_user[9] = 1
+            transfer_user[10] = 0
+            transfer_user[12] = 1
+            transfer_user[13] = 1
+            db.execute("INSERT INTO user_info_tbl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", transfer_user)
+        else:
+            db.execute(
+                "INSERT INTO user_info_tbl VALUES (?, ?, 0, 0, ?, ?, '', 'np', 1, 1, 0, ?, 1, 1)",
+                (int(user_id, 16), user_name, user_name, user_name, uuid.uuid4().hex[:16]),
+            )
+
+        entries_by_title = {}
+        for row in rows:
+            path = target_path(row[1], user_id)
+            title_id = infer_title_id("", [{"path": path}])
+            db.execute("INSERT INTO dir_entry_info_tbl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                       (row[0], path, *row[2:]))
+            entries_by_title.setdefault(title_id, []).append(row)
+
+        for title_id, title_rows in entries_by_title.items():
+            original = next((row for row in savedata_rows if row[1].upper() == title_id), None)
+            total_size = sum(int(row[7]) for row in title_rows)
+            bu_size = max(
+                int(item["size"])
+                for row in title_rows
+                for item in upload_entries[row[0]]["files"]
+            )
+            db.execute(
+                "INSERT INTO users_savedata_tbl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    int(user_id, 16), title_id, title_id, total_size, bu_size,
+                    original[5] if original else 1,
+                    original[6] if original else 1,
+                    original[7] if original else 0,
+                    original[8] if original else int(time.time()),
+                ),
+            )
+        db.commit()
+    finally:
+        db.close()
+    write_upload_manifest(manifest_output or output.with_suffix(".manifest.json"), upload_entries)
+    return output
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Create filtered single-user Data Transfer metadata")
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--source", help="downloaded metadata.db to filter")
+    parser.add_argument("--user-id", required=True)
+    parser.add_argument("--title-id", default="")
+    parser.add_argument("--entry-id", type=int, action="append", default=[])
+    parser.add_argument("--assets", required=True)
+    parser.add_argument("--user-name", default="user")
+    parser.add_argument("--manifest-output")
+    args = parser.parse_args()
+    if args.source:
+        path = create_filtered_metadata(
+            args.output, args.source, args.user_id, args.user_name,
+            args.entry_id, args.assets, args.manifest_output,
+        )
+    else:
+        if len(args.entry_id) > 1:
+            parser.error("single-save metadata accepts only one --entry-id without --source")
+        path = create_metadata(
+            args.output, args.user_id, args.title_id,
+            args.entry_id[0] if args.entry_id else None, args.assets,
+            args.user_name, args.manifest_output,
+        )
+    print(path)
+
+
+if __name__ == "__main__":
+    main()
