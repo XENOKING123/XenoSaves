@@ -96,12 +96,6 @@ def download(options):
                 emit("powerRequired", message="Press power button until it beeps and release")
                 emit("status", step=2, message="Briefly press the CLIENT console power button now.")
                 result, _ = command.response(0x91, sub)
-            if result == 0x11:
-                raise RuntimeError(
-                    "client rejected Data Transfer (0x11). "
-                    "The console is not ready — go to Settings > System > System Software > "
-                    "Data Transfer on the CLIENT console and make sure it is waiting for a connection."
-                )
             if result == 0x17:
                 raise RuntimeError(
                     "client rejected Data Transfer with a hardware mismatch (0x17). "
