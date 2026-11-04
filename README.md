@@ -63,6 +63,16 @@ Oracle choices:
 - **Volunteer workers:** enter the HTOS server URL and a worker/API key from the server's Contribute page. The server must support `ppr_derive`; the corresponding worker implementation is in garlic-worker 1.1.7 or newer.
 - **Local oracle:** disable volunteer workers and enter the jailbroken console's address. GarlicTransfer can deploy the included `poc/ncdt_oracle/ncdt_oracle_server.elf` through the console's payload listener on port 9021. The oracle listens on port 9022.
 
+### Get a volunteer worker token
+
+1. Create an account at [garlicsaves.com/register](https://garlicsaves.com/register), or sign in at [garlicsaves.com/login](https://garlicsaves.com/login).
+2. Open [garlicsaves.com/contribute](https://garlicsaves.com/contribute).
+3. Under **Generate Key**, enter a recognizable name such as `GarlicTransfer`, then click **Generate**.
+4. Copy the new worker key immediately. HTOS shows it only once.
+5. In GarlicTransfer, open **Settings**, keep **Use volunteer workers** enabled, paste the key into **Worker/API key**, and click **Save settings**.
+
+This is an HTOS worker key, not a Forgejo token or a PSN credential. You do not need to run a worker console yourself to submit jobs to the volunteer oracle. The key is stored locally in `config.ini`, which is excluded from git.
+
 The profile root defaults to `dt_downloads`. Downloads are separated as:
 
 ```text
