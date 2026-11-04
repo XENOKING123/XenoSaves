@@ -24,6 +24,7 @@ input:focus { border-color: #5b9bd5; box-shadow: 0 0 0 2px rgba(91,155,213,.14);
 .file-row input { flex: 1; }
 .remote-oracle { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .remote-oracle .checkbox { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 9px; color: #c4d3e5; }
+.remote-oracle .hint { grid-column: 1 / -1; margin: 0; color: #8296ac; font-size: 12px; line-height: 1.5; }
 .checkbox input { width: auto; margin: 0; }
 button { border: 1px solid #3b4b61; border-radius: 8px; background: #263447; color: #e7eff8; padding: 9px 13px; font: inherit; cursor: pointer; }
 button:hover:not(:disabled) { filter: brightness(1.13); }

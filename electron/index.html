@@ -83,10 +83,11 @@
 
       <section class="panel remote-oracle">
         <h2>Oracle</h2>
-        <label class="checkbox"><input id="useRemoteOracle" type="checkbox" checked> Use volunteer workers (no jailbroken console needed)</label>
-        <label>HTOS server<input id="serverUrl" value="https://garlicsaves.com" spellcheck="false"></label>
-        <label>Worker/API key<input id="workerKey" type="password" placeholder="Key from the Contribute page" spellcheck="false"></label>
-        <label>Local jailbroken oracle IP<input id="oracleHost" value="192.168.0.125" spellcheck="false"></label>
+        <label class="checkbox"><input id="useRemoteOracle" type="checkbox" checked> Use remote oracle (no jailbroken console needed)</label>
+        <p class="hint">The remote oracle uses volunteer-run workers to derive your save encryption keys. A default server key is included &mdash; only change it if you have your own.</p>
+        <label>Server URL<input id="serverUrl" value="https://garlicsaves.com" spellcheck="false"></label>
+        <label>Server key<input id="workerKey" type="password" placeholder="Pre-filled — change only if you have your own" spellcheck="false"></label>
+        <label>Local oracle IP (when remote is off)<input id="oracleHost" value="192.168.0.125" spellcheck="false"></label>
       </section>
 
       <section class="panel connections">

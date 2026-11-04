@@ -47,7 +47,7 @@ function oracleReady(host, port) {
 
 async function ensureOracle(options) {
   if (options.useRemoteOracle) {
-    if (!options.workerKey) throw new Error('enter an HTOS worker/API key or disable the remote oracle');
+    if (!options.workerKey) throw new Error('no server key set — check Oracle settings or disable the remote oracle');
     oracleRelay = await startRemoteOracle({
       serverUrl: options.serverUrl,
       workerKey: options.workerKey,
