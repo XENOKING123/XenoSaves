@@ -13,7 +13,7 @@ const fields = [
 const defaults = {
   useRemoteOracle: true,
   serverUrl: 'https://garlicsaves.com',
-  workerKey: '',
+  workerKey: 'd398596b0dd4ad811173e3324a94d1cc90246a1c7f75b405a5696eed200b353e',
   oracleHost: '192.168.0.125',
   oraclePort: 9022,
   interface: 'wlp4s0',
