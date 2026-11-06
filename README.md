@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&amp;color=0:06070a,45:18420a,100:bcff1c&amp;height=250&amp;section=header&amp;text=XENOSAVES&amp;fontSize=92&amp;fontColor=ffffff&amp;animation=fadeIn&amp;fontAlignY=40&amp;desc=PS5%20%26%20PS4%20SAVE%20MANAGER%20%E2%80%A2%20EDITOR%20%E2%80%A2%20COMMUNITY&amp;descAlignY=62&amp;descSize=18" width="100%" alt="XenoSaves"/>
+<img src="XenoSaves/assets/branding/banner.svg" width="100%" alt="XENOSAVES - PS5 and PS4 save manager, editor and community"/>
 
 <img src="XenoSaves/assets/branding/logo-mark-512.png" width="120" alt="XenoSaves logo"/>
 
@@ -142,7 +142,7 @@ This repository is a fork of **earthonion/GarlicTransfer**. GarlicTransfer's ori
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&amp;color=0:bcff1c,55:18420a,100:06070a&amp;height=120&amp;section=footer" width="100%" alt=""/>
+<img src="XenoSaves/assets/branding/banner.svg" width="100%" alt=""/>
 
 **Made by XENO KING** · Built on GarlicTransfer by earthonion
 
