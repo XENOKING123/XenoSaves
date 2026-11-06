@@ -15,10 +15,10 @@
 
 <br/><br/>
 
-![version](https://img.shields.io/badge/version-0.3.14-BCFF1C?style=for-the-badge&labelColor=0b1206)
-![platform](https://img.shields.io/badge/Windows-x64-2F7CF6?style=for-the-badge&labelColor=0b1206)
-![built on](https://img.shields.io/badge/built%20on-GarlicTransfer-ff9a3d?style=for-the-badge&labelColor=0b1206)
-![electron](https://img.shields.io/badge/Electron-41-9b8cff?style=for-the-badge&labelColor=0b1206)
+<img src="https://img.shields.io/badge/version-0.3.14-BCFF1C?style=for-the-badge&amp;labelColor=0b1206" alt="version"/>
+<img src="https://img.shields.io/badge/Windows-x64-2F7CF6?style=for-the-badge&amp;labelColor=0b1206" alt="Windows x64"/>
+<img src="https://img.shields.io/badge/built%20on-GarlicTransfer-ff9a3d?style=for-the-badge&amp;labelColor=0b1206" alt="built on GarlicTransfer"/>
+<img src="https://img.shields.io/badge/Electron-41-9b8cff?style=for-the-badge&amp;labelColor=0b1206" alt="Electron 41"/>
 
 ### [⬇️ Download the app](../../releases/latest) &nbsp;•&nbsp; [✨ Features](#-what-xenosaves-does) &nbsp;•&nbsp; [❓ FAQ](#-faq)
 
