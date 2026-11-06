@@ -1,140 +1,150 @@
-# GarlicTransfer
+<!-- ╔══════════════════════════════════════════════════════════════════════╗ -->
+<!-- ║                 XENOSAVES — PS5/PS4 SAVE MANAGER & EDITOR              ║ -->
+<!-- ║   Built on GarlicTransfer by earthonion. Credits below. Be kind.      ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════════════╝ -->
 
-**Alpha release — 0.1.0**
+<div align="center">
 
-GarlicTransfer is an Electron application for downloading PS5 save containers to a PC and uploading selected saves back to a console through Sony's Data Transfer protocol. It supports local PPR oracles on a jailbroken PS5 and volunteer workers through HTOS.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:06070a,45:18420a,100:bcff1c&height=250&section=header&text=XENOSAVES&fontSize=92&fontColor=ffffff&animation=fadeIn&fontAlignY=40&desc=PS5%20%26%20PS4%20SAVE%20MANAGER%20%E2%80%A2%20EDITOR%20%E2%80%A2%20COMMUNITY&descAlignY=62&descSize=18" width="100%" alt="XenoSaves"/>
 
-This is research software. Back up your saves before using Upload. Upload can overwrite or remove console save data, and the workflow intentionally asks you to delete the original saves first.
+<img src="XenoSaves/assets/branding/logo-mark-512.png" width="120" alt="XenoSaves logo"/>
 
-## Features
+<br/>
 
-- Console discovery over DDP (`SRCH`) with firmware display.
-- Per-console profiles keyed by host ID; each profile has separate metadata, manifests, and saves.
-- Offline PS4/PS5 title names from [PlayStation-Titles](https://github.com/andshrew/PlayStation-Titles).
-- A persistent console-to-PC session: browse once, then download one or more saves without re-entering Data Transfer mode.
-- Single-user, multi-save upload selection using previously downloaded metadata.
-- Filtered upload metadata and save-only transfer behavior based on a captured working transfer.
-- Automatic source power signal and optional clean `DisconnectPS5` reboot after downloading.
-- Local or volunteer PPR oracle support.
+<img src="https://readme-typing-svg.demolab.com?font=Rajdhani&weight=700&size=22&pause=900&color=BCFF1C&center=true&vCenter=true&width=860&lines=%F0%9F%8E%AE+Pull+your+PS5+saves+to+your+PC+%E2%80%94+no+jailbreak+needed;%E2%9C%8F%EF%B8%8F+A+Save+Wizard-style+hex+editor+%26+value+finder;%F0%9F%A4%9D+A+community+save+collection%2C+browse+and+download;%F0%9F%94%92+Nothing+secret+ships+in+the+app+%E2%80%94+safe+by+design" alt="tagline"/>
 
-Console-to-PC downloading has been exercised on 13.60. On one tested 14.22 console, browsing from the home screen and downloading the save list worked with the decimal PSN account ID. GarlicTransfer accepts that ID directly or reads it from a standard PS4 USB backup folder. The one-time Data Transfer menu pairing alternative is experimental: its listener has automated protocol tests but has not yet completed a live PS5 pairing. Other firmware versions use the inferred major-version mapping and remain unverified.
+<br/><br/>
 
-## Requirements
+![version](https://img.shields.io/badge/version-0.3.14-BCFF1C?style=for-the-badge&labelColor=0b1206)
+![platform](https://img.shields.io/badge/Windows-x64-2F7CF6?style=for-the-badge&labelColor=0b1206)
+![built on](https://img.shields.io/badge/built%20on-GarlicTransfer-ff9a3d?style=for-the-badge&labelColor=0b1206)
+![electron](https://img.shields.io/badge/Electron-41-9b8cff?style=for-the-badge&labelColor=0b1206)
 
-- Node.js 18 or newer and npm.
-- Python 3.10 or newer.
-- The Python packages in `requirements.txt`.
-- A PS5 and PC on the same local network.
-- An HTOS worker/API key for the volunteer oracle, or a jailbroken PS5 for a local oracle.
-- On Linux, `pkexec`/PolicyKit for the Upload backend to bind TCP ports 1004/1005 and UDP port 1006. Only the backend requests elevation; Electron runs as the normal user. On Debian/Ubuntu, the package is `policykit-1`.
+### [⬇️ Download the latest release](../../releases/latest) &nbsp;•&nbsp; [💬 Community](#-community) &nbsp;•&nbsp; [❓ FAQ](#-faq)
 
-## Install
+<img src="XenoSaves/assets/screenshots/dashboard.png" width="90%" alt="XenoSaves dashboard"/>
 
-```bash
-git clone https://git.etawen.dev/earthonion/GarlicTransfer.git
-cd GarlicTransfer
-npm install
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-```
+</div>
 
-Activate the Python environment before starting the app so its `python3` can import `cryptography`:
+---
 
-```bash
-. .venv/bin/activate
-npm start
-```
+## ✨ What XenoSaves does
 
-On Linux, if `pkexec` is missing:
+XenoSaves is a free Windows app for managing, editing and sharing PlayStation saves. It is built on top of **[GarlicTransfer](https://github.com/earthonion/GarlicTransfer)** by **earthonion**, which provides the save-transfer foundation.
 
-```bash
-sudo apt install policykit-1
-```
+| | |
+|---|---|
+| 🎮 **Grab saves from your PS5** | Download your own saves from a **stock, up-to-date PS5** — no jailbreak — through the GarlicTransfer worker. Pick the user, then the game. *(Verified on real hardware.)* |
+| ✏️ **Advanced Mode editor** | A real hex editor: edit bytes, a **value finder** (find where your money/HP is stored), before/after **compare**, and **Save Wizard–style quick codes** you can apply or make. Your original file is never touched. |
+| 🧩 **Smart scan** | Finds names in a save that look like money, health, stats, points, items and unlocks — leads you check, never fakes. Optional AI helper. |
+| 🤝 **Community saves** | Browse and download a growing collection of PS5/PS4 saves, grouped by game with cover art. Share your own — an admin reviews it before it goes live. |
+| ⚡ **Cheats browser** | A live catalog of PS5 cheats by game. |
+| 💾 **Save Library & backups** | Everything you grab is kept locally with timestamps; your originals are never overwritten. |
 
-Do not run the whole Electron application as root. Upload will display a PolicyKit authentication prompt when privileged ports are required.
+> **Honest by design:** XenoSaves never pretends. If a console can't be reached or a capability isn't ready, it says so plainly. Features shown here are the ones that actually work.
 
-## Configuration
+---
 
-Open **Settings** in the app and choose **Save settings** to create `config.ini`. This file may contain your worker key and is deliberately excluded from git. `config.example.ini` documents the available settings.
+## 🖼️ Screenshots
 
-Oracle choices:
+<div align="center">
 
-- **Volunteer workers:** enter the HTOS server URL and a worker/API key from the server's Contribute page. The server must support `ppr_derive`; the corresponding worker implementation is in garlic-worker 1.1.7 or newer.
-- **Local oracle:** disable volunteer workers and enter the jailbroken console's address. GarlicTransfer can deploy the included `poc/ncdt_oracle/ncdt_oracle_server.elf` through the console's payload listener on port 9021. The oracle listens on port 9022.
+| Advanced Mode (hex editor) | Community saves |
+|:--:|:--:|
+| <img src="XenoSaves/assets/screenshots/advanced.png" width="420"/> | <img src="XenoSaves/assets/screenshots/saves.png" width="420"/> |
+| **Console (grab saves)** | **My PSN** |
+| <img src="XenoSaves/assets/screenshots/console.png" width="420"/> | <img src="XenoSaves/assets/screenshots/mypsn.png" width="420"/> |
 
-### Get a volunteer worker token
+</div>
 
-1. Create an account at [garlicsaves.com/register](https://garlicsaves.com/register), or sign in at [garlicsaves.com/login](https://garlicsaves.com/login).
-2. Open [garlicsaves.com/contribute](https://garlicsaves.com/contribute).
-3. Under **Generate Key**, enter a recognizable name such as `GarlicTransfer`, then click **Generate**.
-4. Copy the new worker key immediately. HTOS shows it only once.
-5. In GarlicTransfer, open **Settings**, keep **Use volunteer workers** enabled, paste the key into **Worker/API key**, and click **Save settings**.
+---
 
-This is an HTOS worker key, not a Forgejo token or a PSN credential. You do not need to run a worker console yourself to submit jobs to the volunteer oracle. The key is stored locally in `config.ini`, which is excluded from git.
+## ⬇️ Download & install
 
-The profile root defaults to `dt_downloads`. Downloads are separated as:
+Two builds, on the [**Releases**](../../releases/latest) page. No Python, Node, or developer tools — just download and open.
 
-```text
-dt_downloads/
-  <console-host-id>/
-    metadata.db
-    manifest.json
-    <save-entry-id>/
-      manifest.json
-      <save containers>
-```
+| Build | File | For |
+|---|---|---|
+| **Setup** | `XenoSaves-Companion-<version>-Setup.exe` | Normal install: Start-menu shortcut, easy uninstall. |
+| **Portable** | `XenoSaves-Companion-<version>-portable.exe` | Runs from any folder, no install. |
 
-## Download saves
+1. Download **Setup** (recommended) or **Portable**.
+2. Open it. Windows may warn about a new publisher — the app is code-signed; click **More info → Run anyway** if prompted.
+3. That's it. Sign in only if you want the community features.
 
-1. Start GarlicTransfer and click **Discover consoles**.
-2. Select the source console. The verified first browse on 14.22 used a decimal PSN account ID. Enter that ID, or click **Find in PS4 USB backup** to derive it from the USB drive, its `PS4` or `SAVEDATA` folder, or the 16-hex-digit account folder inside `SAVEDATA`. The USB picker has not been live-tested end to end. GarlicTransfer only reads folder names; it does not import or modify the PS4 save. After a successful browse, the per-console `metadata.db` supplies the ID automatically.
-   On Windows, **Pair this PS5 once (experimental)** offers a menu-based alternative that has not yet been verified on a live PS5. Start its listener, then open **Settings → System → System Software → Data Transfer** on the PS5 and select **GarlicTransfer Pairing**. The PS5 may say **Can't transfer data**; no save migration starts. If GarlicTransfer confirms pairing, return to the home screen. The captured identifier stays in the app's private user-data folder for this console and firmware. If pairing does not complete, use the account-ID or USB route. Linux and macOS use those routes as well.
-3. Click **Browse console saves** while the PS5 is at its home screen; you do not need to open Data Transfer on the PS5 first.
-4. If asked, briefly press the console power button until it beeps and release.
-5. Select one or more saves and click **Download selected**, or use the per-save Download button.
-6. Keep the session open for more selections, or choose **Finish and reboot console**.
+**Windows 10 / 11, 64-bit.**
 
-The account ID is used to construct the local Data Transfer approval request. It is not a password or PSN login. The app passes it to the Python backend over standard input, rather than placing it in the process command line. Enter it as a decimal string: JavaScript numbers cannot preserve every 64-bit account ID. If `PS4/SAVEDATA` contains several account folders, select the account folder for the same PSN user as the PS5 profile being browsed.
+---
 
-If the PS5 rejects a stored pairing with result `0x11`, it may belong to a different PSN user. Pair this PS5 again on Windows or enter the correct decimal account ID.
+## 🔄 Updates
 
-Downloaded entry folders contain the save containers and a manifest with paths, sizes, SHA-256 hashes, and GFP5 headers.
+XenoSaves updates itself. It checks on startup, downloads new versions in the background, verifies them, and installs on the next restart — it will **never interrupt a save transfer**. Only a **newer** version is ever installed (no downgrade tricks). You can see the version and what changed in **Dashboard → Updates**.
 
-## Upload saves
+---
 
-1. Download metadata and the save containers first. Upload selections come from the selected console's existing metadata profile.
-2. Click **Upload selected saves**.
-3. Select one user and one or more downloaded saves.
-4. Delete **all selected original saves** on the client console.
-5. Confirm in GarlicTransfer and authenticate the backend if prompted.
-6. On the console, open **Settings → System → System Software → Data Transfer**, press **Continue**, select **GarlicTransfer**, then **Start transfer**.
+## 🔒 Security & privacy
 
-The source power signal is sent automatically after one second. Upload generates a filtered metadata database containing one user and only the selected save entries.
+- **No secret ever ships in the app.** The only key inside the exe is the same public key the website already uses in the browser. Everything that could be abused — publishing saves, approving, banning, the transfer worker — lives on the **server** and checks your account. There is nothing in the download for anyone to extract and misuse.
+- **Tamper-proof build.** The app is code-signed and its program files are integrity-checked; a modified copy refuses to run.
+- **Your saves stay yours.** Saves are read locally; your original files are never changed. A shared save is only published after you choose to share it and an admin reviews it.
 
-## Firmware mapping
+See [`XenoSaves/SECURITY.md`](XenoSaves/SECURITY.md).
 
-The DDP `system-version` determines both the command protocol and power-body firmware value:
+---
 
-| Firmware | Command protocol |
-| --- | --- |
-| 1.02 | `0x010` |
-| 13.60 | `0x130` |
-| 14.22 | `0x140` |
-| 15.00 | `0x150` |
-| 21.00 | `0x210` |
+## 💬 Community
 
-Only 13.x/14.x are live-verified. The remaining mappings are inferred from the major-version pattern.
+XenoSaves has a built-in community: browse and download saves, share your own, and chat with other players. It uses your **XenoSaves website account** — one login for the site and the app.
 
-## Development checks
+- 🌐 Website: **[xenoking.app](https://xenoking.app)**
+- 💬 Discord: *(link in the app → Discord tab)*
 
-```bash
-npm run check
-python3 -m py_compile poc/dt_backend.py poc/dt_download.py poc/dt_metadata.py poc/dt_source.py poc/dt_discovery.py
-node --test tests/account_id.test.cjs tests/pairing_store.test.cjs
-python3 -m unittest discover -s tests -p 'test_*.py'
-```
+---
 
-## Title data
+## ❓ FAQ
 
-PS4 and PS5 title data is bundled from [andshrew/PlayStation-Titles](https://github.com/andshrew/PlayStation-Titles) under the MIT license. Its license and source notice are in `data/PlayStation-Titles-LICENSE.txt`.
+**Do I need a jailbroken PS5?** No. Grabbing your saves works on a normal, fully-updated PS5.
+
+**Do I need to install Python or anything?** No. The Setup and Portable builds contain everything.
+
+**Is my save data safe?** Yes — originals are never modified. Edits are written to a separate copy.
+
+**Can it put a save back on my console?** Grabbing saves to your PC is verified and working. Restoring edited saves to a console is still being finished — the app tells you honestly what is and isn't ready; it never fakes a transfer.
+
+**Is it really free?** Yes.
+
+---
+
+## 🛠️ Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Windows SmartScreen warning | The app is signed; click **More info → Run anyway**. |
+| PS5 not found | Make sure the PC and PS5 are on the same network and the PS5 is on the home screen. The app shows the exact step it's waiting on. |
+| A download fails | The server's link to the save collection may need a moment; try again shortly. |
+| Update won't install | It installs on the next restart, and only when idle. Fully close and reopen the app. |
+
+---
+
+## 🙏 Credits
+
+XenoSaves stands on other people's work. Thank you.
+
+| | |
+|---|---|
+| **earthonion** | Creator of **[GarlicTransfer](https://github.com/earthonion/GarlicTransfer)** — the PS5 save-transfer foundation XenoSaves is built on. |
+| **XENO KING** | Creator of XenoSaves: the app, the editor, the community, the website. |
+| **Malygos** | Contributor. |
+| **Skiller** | Contributor. |
+
+This repository is a fork of **earthonion/GarlicTransfer**. GarlicTransfer's original source is kept here unchanged; see [`XenoSaves/CREDITS.md`](XenoSaves/CREDITS.md) and [`XenoSaves/LICENSES.md`](XenoSaves/LICENSES.md).
+
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:bcff1c,55:18420a,100:06070a&height=120&section=footer" width="100%" alt=""/>
+
+**Made by XENO KING** · Built on GarlicTransfer by earthonion
+
+</div>

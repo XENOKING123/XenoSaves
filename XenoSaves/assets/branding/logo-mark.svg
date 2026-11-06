@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="XenoSaves">
+  <defs>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d4ff5a"/>
+      <stop offset="1" stop-color="#8ee000"/>
+    </linearGradient>
+  </defs>
+  <path d="M256 36 L448 100 V270 C448 376 364 446 256 478 C148 446 64 376 64 270 V100 Z"
+        fill="#0d110a" stroke="url(#lime)" stroke-width="24" stroke-linejoin="round"/>
+  <path d="M170 170 L342 342" stroke="#f3f8ee" stroke-width="44" stroke-linecap="round" fill="none"/>
+  <path d="M342 170 L170 342" stroke="url(#lime)" stroke-width="44" stroke-linecap="round" fill="none"/>
+  <circle cx="256" cy="256" r="27" fill="#0d110a"/>
+  <circle cx="256" cy="256" r="12" fill="url(#lime)"/>
+</svg>
