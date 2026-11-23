@@ -1,39 +1,84 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300" role="img" aria-label="XENOSAVES - PS5 and PS4 save manager, editor and community">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="XenoSaves - PS5 and PS4 save manager, cheats, editor and community">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#05060a"/>
-      <stop offset="0.55" stop-color="#0a1606"/>
-      <stop offset="1" stop-color="#132a05"/>
+      <stop offset="0" stop-color="#06060f"/>
+      <stop offset="0.5" stop-color="#0b0a1f"/>
+      <stop offset="1" stop-color="#071624"/>
     </linearGradient>
     <linearGradient id="lime" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#9ff000"/>
       <stop offset="1" stop-color="#d6ff4d"/>
     </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b5cff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#8b5cff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#38d6ff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="violet" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8b5cff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#8b5cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cyan" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#38d6ff" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#38d6ff" stop-opacity="0"/>
+    </radialGradient>
     <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#bcff1c" stop-opacity="0.35"/>
+      <stop offset="0" stop-color="#bcff1c" stop-opacity="0.34"/>
       <stop offset="1" stop-color="#bcff1c" stop-opacity="0"/>
     </radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity="0.045" stroke-width="1"/>
+    </pattern>
   </defs>
 
-  <rect width="1280" height="300" fill="url(#bg)"/>
-  <ellipse cx="1050" cy="80" rx="420" ry="260" fill="url(#glow)"/>
-  <ellipse cx="180" cy="300" rx="360" ry="200" fill="url(#glow)" opacity="0.5"/>
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <rect width="1280" height="320" fill="url(#grid)"/>
+  <ellipse cx="1060" cy="60" rx="460" ry="280" fill="url(#violet)"/>
+  <ellipse cx="760" cy="340" rx="420" ry="220" fill="url(#cyan)"/>
+  <ellipse cx="130" cy="170" rx="250" ry="210" fill="url(#glow)"/>
+  <g transform="rotate(-18 900 160)">
+    <rect x="520" y="150" width="900" height="3" fill="url(#beam)"/>
+    <rect x="620" y="206" width="760" height="2" fill="url(#beam)" opacity="0.6"/>
+    <rect x="460" y="96" width="700" height="2" fill="url(#beam)" opacity="0.45"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="612" cy="48" r="1.6" opacity="0.8"/><circle cx="700" cy="262" r="1.2" opacity="0.6"/><circle cx="842" cy="92" r="1.4" opacity="0.7"/>
+    <circle cx="958" cy="232" r="1.8" opacity="0.8"/><circle cx="1046" cy="130" r="1.1" opacity="0.6"/><circle cx="1132" cy="52" r="1.6" opacity="0.75"/>
+    <circle cx="1196" cy="210" r="1.3" opacity="0.6"/><circle cx="1238" cy="110" r="1.7" opacity="0.8"/><circle cx="520" cy="284" r="1.2" opacity="0.5"/>
+    <circle cx="430" cy="40" r="1.3" opacity="0.55"/><circle cx="884" cy="290" r="1.2" opacity="0.5"/><circle cx="1090" cy="282" r="1.5" opacity="0.65"/>
+  </g>
 
-  <!-- shield logo mark -->
-  <g transform="translate(96 150)">
-    <path d="M0,-70 L58,-48 L58,18 C58,58 30,84 0,96 C-30,84 -58,58 -58,18 L-58,-48 Z" fill="#0b1206" stroke="url(#lime)" stroke-width="5"/>
-    <g stroke="url(#lime)" stroke-width="13" stroke-linecap="round">
-      <line x1="-26" y1="-20" x2="26" y2="28"/>
-      <line x1="26" y1="-20" x2="-26" y2="28"/>
+  <!-- shield mark -->
+  <g transform="translate(128 160)">
+    <path d="M0,-74 L62,-50 L62,20 C62,62 32,90 0,102 C-32,90 -62,62 -62,20 L-62,-50 Z" fill="#0b1206" stroke="url(#lime)" stroke-width="5"/>
+    <g stroke="url(#lime)" stroke-width="14" stroke-linecap="round">
+      <line x1="-28" y1="-22" x2="28" y2="30"/>
+      <line x1="28" y1="-22" x2="-28" y2="30"/>
     </g>
-    <circle cx="0" cy="4" r="11" fill="#0b1206" stroke="url(#lime)" stroke-width="5"/>
+    <circle cx="0" cy="4" r="12" fill="#0b1206" stroke="url(#lime)" stroke-width="5"/>
   </g>
 
   <!-- wordmark -->
-  <text x="208" y="150" font-family="Segoe UI, Arial, sans-serif" font-size="92" font-weight="800" letter-spacing="2" fill="#ffffff">XENO<tspan fill="url(#lime)">SAVES</tspan></text>
-  <text x="212" y="196" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="600" letter-spacing="3" fill="#aab6a0">PS5 &amp; PS4 SAVE MANAGER &#183; EDITOR &#183; COMMUNITY</text>
+  <text x="232" y="158" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="86" font-weight="800" letter-spacing="-2" fill="#ffffff">Xeno<tspan fill="url(#lime)">Saves</tspan></text>
+  <text x="236" y="202" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="25" font-weight="600" fill="#c9cff0">Your PlayStation saves on your PC: grab, cheat, edit, share, restore.</text>
 
-  <!-- wave -->
-  <path d="M0,250 C220,210 420,290 640,258 C860,226 1060,296 1280,256 L1280,300 L0,300 Z" fill="#bcff1c" opacity="0.14"/>
-  <path d="M0,270 C240,238 440,300 680,274 C900,250 1080,300 1280,276 L1280,300 L0,300 Z" fill="#bcff1c" opacity="0.22"/>
+  <!-- what is inside -->
+  <g font-family="Segoe UI, Inter, Arial, sans-serif" font-size="17" font-weight="700">
+    <g transform="translate(236 232)">
+      <rect width="118" height="38" rx="19" fill="#bcff1c" fill-opacity="0.12" stroke="#bcff1c" stroke-opacity="0.55"/>
+      <text x="59" y="25" text-anchor="middle" fill="#d6ff4d">PS5 + PS4</text>
+    </g>
+    <g transform="translate(366 232)">
+      <rect width="168" height="38" rx="19" fill="#8b5cff" fill-opacity="0.16" stroke="#8b5cff" stroke-opacity="0.6"/>
+      <text x="84" y="25" text-anchor="middle" fill="#cdbdff">10,800 PS4 cheats</text>
+    </g>
+    <g transform="translate(546 232)">
+      <rect width="126" height="38" rx="19" fill="#38d6ff" fill-opacity="0.13" stroke="#38d6ff" stroke-opacity="0.55"/>
+      <text x="63" y="25" text-anchor="middle" fill="#a8ecff">100 themes</text>
+    </g>
+    <g transform="translate(684 232)">
+      <rect width="150" height="38" rx="19" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.28"/>
+      <text x="75" y="25" text-anchor="middle" fill="#e9ecff">No jailbreak</text>
+    </g>
+  </g>
 </svg>
